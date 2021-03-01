@@ -1,11 +1,9 @@
 #include <Arduino.h>
 #include <WiFi.h>
-// #include <SevenSegmentTM1637.h>
 #include <TM1637Display.h>
 #include "env.h"
 
-// SevenSegmentTM1637 display(PIN_CLK, PIN_DIO);
-TM1637Display display(PIN_CLK, PIN_DIO);
+TM1637Display display(PIN_CLK, PIN_DIO, DEFAULT_BIT_DELAY, 6);
 
 void setup() {
   Serial.begin(115200);
@@ -26,41 +24,29 @@ void setup() {
   Serial.println(WiFi.localIP());
 
   Serial.println("[Display] Setup");
-  // display.begin(6);
-  // display.setBacklight(20);
-  // display.clear();
   display.setBrightness(0x0f);
   display.clear();
 }
 
 void loop() {
-  // display.print('654321');
-  // delay(2000);
-  // display.clear();
-  //
-  // display.print('000000');
-  display.clear();
-  display.showNumberDec(1, false, 1, 0);
-  delay(1000);
+  uint32_t number = 123456;
 
-  display.clear();
-  display.showNumberDec(1, false, 1, 1);
-  delay(1000);
-
-  display.clear();
-  display.showNumberDec(1, false, 1, 2);
-  delay(1000);
-
-  display.clear();
-  display.showNumberDec(1, false, 1, 3);
-  delay(1000);
-
-  display.clear();
-  display.showNumberDec(1, false, 1, 4);
-  delay(1000);
-
-  display.clear();
-  display.showNumberDec(1, false, 1, 5);
-  delay(1000);
-  // display.clear();
+  uint8_t digits = 1;
+  if (number > 9) {
+    digits = 2;
+  }
+  if (number > 99) {
+    digits = 3;
+  }
+  if (number > 999) {
+    digits = 4;
+  }
+  if (number > 9999) {
+    digits = 5;
+  }
+  if (number > 99999) {
+    digits = 6;
+  }
+  display.showNumberDec(number, false, digits, 3);
+  delay(100);
 }
