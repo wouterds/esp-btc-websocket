@@ -15,84 +15,93 @@ void setup() {
   Serial.begin(115200);
   Serial.println();
 
-  Serial.print(F("[WiFi] Connecting to: "));
+  Serial.print("[WiFi] Connecting to: ");
   Serial.print(WIFI_SSID);
-  Serial.print(F(".."));
+  Serial.print("..");
 
   WiFi.begin(WIFI_SSID, WIFI_PASS);
   while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(F("."));
+    delay(250);
+    Serial.print(".");
   }
   Serial.println();
 
-  Serial.print(F("[WiFi] Connected to network, IP: "));
+  Serial.print("[WiFi] Connected to network, IP: ");
   Serial.println(WiFi.localIP());
 
-  Serial.println(F("[Display] Setup"));
+  Serial.println("[Display] Setup");
   display.setBrightness(0x0f);
   display.clear();
 
-  Serial.println(F("[WebSocket] Setup"));
+  Serial.println("[WebSocket] Setup");
+  wsConnect();
 
-  bool connected = websocket.connect(F("wss://fstream.binance.com/stream?streams=btcusdt@markPrice"));
-  if (connected) {
-      Serial.println(F("[WebSocket] Connected!"));
-      websocket.ping();
-  } else {
-      Serial.println(F("[WebSocket] Not connected!"));
-  }
+  websocket.onMessage([&](WebsocketsMessage message) {
+    Serial.print("[WebSocket] New message: ");
+    Serial.println(message.data());
 
-  websocket.onMessage([&](WebsocketsMessage message){
-      Serial.println(F("Got Message!"));
-      Serial.println(message.data());
+    DynamicJsonDocument doc(384);
+    DeserializationError error = deserializeJson(doc, message.data());
+    if (error) {
+      Serial.print("[WebSocket] Could not deserialize JSON: ");
+      Serial.println(error.f_str());
+      return;
+    }
 
-      StaticJsonDocument<512> doc;
-      DeserializationError error = deserializeJson(doc, message.data());
-      if (error) {
-        Serial.print(F("deserializeJson() failed: "));
-        Serial.println(error.f_str());
-        return;
-      }
+    int price = doc["data"]["p"];
+    Serial.print("[WebSocket] Serialized json! Bitcoin price: ");
+    Serial.println(price);
 
-      int price = doc["data"]["p"];
-      Serial.print(F("Serialized json! Price:"));
-      Serial.println(price);
-      showNumberDec(price);
+    printNumberToDisplay(price);
   });
 }
 
 void loop() {
   if (websocket.available()) {
     websocket.poll();
+    websocket.ping();
+  } else {
+    Serial.println("Websocket is not available!");
+    delay(1000);
+    wsConnect();
   }
-  delay(100);
+
+  delay(250);
 }
 
-uint8_t previousDigits = 1;
-void showNumberDec(long number)
-{
-  uint8_t digits = 1;
-  if (number > 9) {
-    digits = 2;
+void wsConnect() {
+  if (websocket.connect("wss://fstream.binance.com/stream?streams=btcusdt@markPrice")) {
+    Serial.println("[WebSocket] Connected!");
+    websocket.ping();
+    return;
   }
-  if (number > 99) {
-    digits = 3;
-  }
-  if (number > 999) {
-    digits = 4;
-  }
-  if (number > 9999) {
-    digits = 5;
-  }
+
+  Serial.println("[WebSocket] Not connected!");
+  delay(1000);
+  wsConnect();
+}
+
+int previousDigits = 1;
+void printNumberToDisplay(int number) {
+  int digits;
   if (number > 99999) {
     digits = 6;
+  } else if (number > 9999) {
+    digits = 5;
+  } else if (number > 999) {
+    digits = 4;
+  } else if (number > 99) {
+    digits = 3;
+  } else if (number > 9) {
+    digits = 2;
+  } else {
+    digits = 1;
   }
 
   if (previousDigits != digits) {
+    previousDigits = digits;
     display.clear();
   }
-  previousDigits = digits;
 
   display.showNumberDec(number, false, digits);
 }
