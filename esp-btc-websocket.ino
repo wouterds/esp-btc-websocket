@@ -29,8 +29,27 @@ void setup() {
 }
 
 void loop() {
-  uint32_t number = 123456;
+  showNumberDec(3);
+  delay(1000);
+  showNumberDec(2);
+  delay(1000);
+  showNumberDec(1);
+  delay(1000);
 
+  Serial.println("Starting counter!");
+  for (int i = 1; i <= 999999; i++) {
+    Serial.print("count: ");
+    Serial.println(i);
+    showNumberDec(i);
+    delay(10);
+  }
+
+  delay(3000);
+}
+
+uint8_t previousDigits = 1;
+void showNumberDec(long number)
+{
   uint8_t digits = 1;
   if (number > 9) {
     digits = 2;
@@ -47,6 +66,11 @@ void loop() {
   if (number > 99999) {
     digits = 6;
   }
-  display.showNumberDec(number, false, digits, 3);
-  delay(100);
+
+  if (previousDigits != digits) {
+    display.clear();
+  }
+  previousDigits = digits;
+
+  display.showNumberDec(number, false, digits);
 }
