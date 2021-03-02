@@ -30,7 +30,7 @@ void setup() {
   Serial.println(WiFi.localIP());
 
   Serial.println("[Display] Setup");
-  display.setBrightness(0);
+  display.setBrightness(7);
 
   Serial.println("[WebSocket] Setup");
   wsConnect();
