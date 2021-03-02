@@ -61,11 +61,8 @@ void loop() {
     websocket.ping();
   } else {
     Serial.println("Websocket is not available!");
-    delay(1000);
     wsConnect();
   }
-
-  delay(250);
 }
 
 void wsConnect() {
